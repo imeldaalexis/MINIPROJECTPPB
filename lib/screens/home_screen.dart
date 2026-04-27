@@ -4,6 +4,7 @@ import '../services/firestore_service.dart';
 import '../widgets/order_card.dart';
 import '../utils/app_theme.dart';
 import '../widgets/add_order_sheet.dart';
+import '../widgets/edit_order_sheet.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -123,6 +124,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             deliveryTime: data['deliveryTime'] ?? '',
                             items: items,
                             sellerEmail: data['sellerEmail'] ?? 'Seller',
+                          onEdit: () {
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              builder: (_) => EditOrderSheet(
+                                firestoreId: doc.id,
+                                currentName: data['customerName'] ?? '',
+                                currentLoc: data['customerLocation'] ?? '',
+                                currentTime: data['deliveryTime'] ?? '',
+                                currentItems: items, // Kirim list item yang sudah di-fetch
+                              ),
+                            );
+                          },
                             onDelete: () => FirestoreService.deleteTransaction(doc.id),
                           );
                         },
