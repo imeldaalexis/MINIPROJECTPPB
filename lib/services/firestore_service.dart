@@ -247,4 +247,65 @@ class FirestoreService {
 
   static Stream<QuerySnapshot> userLocationsStream() =>
       _db.collection('user_locations').snapshots();
+
+  static Future<void> syncFromFirestore() async {
+    try {
+      // 1. Sync Semua Menus
+      final menus = await _db.collection('menus').get();
+      for (final doc in menus.docs) {
+        final d = doc.data();
+        final model = MenuModel()
+          ..firestoreId = doc.id
+          ..menuName = d['menuName'] ?? ''
+          ..price = (d['price'] as num?)?.toDouble() ?? 0.0
+          ..isSynced = true;
+        await IsarService.upsertMenu(model);
+      }
+
+      // 2. Sync Transaksi Hari Ini
+      final today = DateTime.now().toIso8601String().substring(0, 10);
+      final txns = await _db
+          .collection('transactions')
+          .where('transactionDate', isEqualTo: today)
+          .get();
+
+      for (final doc in txns.docs) {
+        final d = doc.data();
+        
+        // Ambil detail untuk transaksi ini
+        final details = await _db
+            .collection('transaction_details')
+            .where('transactionId', isEqualTo: doc.id)
+            .get();
+
+        final detailModels = details.docs.map((dd) {
+          final data = dd.data();
+          return TransactionDetailModel()
+            ..firestoreId = dd.id
+            ..transactionFirestoreId = doc.id
+            ..menuFirestoreId = data['menuId'] ?? ''
+            ..menuName = data['menuName'] ?? ''
+            ..menuPrice = (data['menuPrice'] as num?)?.toDouble() ?? 0.0
+            ..quantity = (data['quantity'] ?? data['qty'] ?? 0) as int
+            ..isSynced = true;
+        }).toList();
+
+        final txnModel = TransactionModel()
+          ..firestoreId = doc.id
+          ..transactionDate = d['transactionDate'] ?? today
+          ..deliveryTime = d['deliveryTime'] ?? 'siang 1'
+          ..customerName = d['customerName'] ?? ''
+          ..customerLocation = d['customerLocation'] ?? ''
+          ..sellerUid = d['sellerUid'] ?? ''
+          ..createdAt = (d['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now()
+          ..updatedAt = (d['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now()
+          ..isSynced = true;
+
+        await IsarService.upsertTransaction(txnModel, detailModels);
+      }
+      print("Sync success: Menus and Today's Transactions updated.");
+    } catch (e) {
+      print("Sync error: $e");
+    }
+  }
 }
