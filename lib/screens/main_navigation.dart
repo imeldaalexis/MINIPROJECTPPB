@@ -4,6 +4,7 @@ import 'menu_screen.dart';
 import 'summary_screen.dart';
 import 'tracker_screen.dart';
 import '../services/location_service.dart';
+import '../services/notification_service.dart';
 import '../services/firestore_service.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -30,6 +31,7 @@ class _MainNavigationState extends State<MainNavigation> {
     FirestoreService.syncFromFirestore();
     // Start tracking GPS in the background while logged in
     LocationService.startTracking();
+    NotificationService.listenToNewOrders();
   }
 
   @override

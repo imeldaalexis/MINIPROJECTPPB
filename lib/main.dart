@@ -12,7 +12,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await IsarService.init();
-  await NotificationService.initializeNotification();;
+  await NotificationService.initializeNotification();
   NotificationService.listenToNewOrders();
   LocationService.startTracking();
 
